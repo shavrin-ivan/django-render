@@ -26,14 +26,13 @@ class RenderNode(template.Node):
         if not isinstance(var, models.Model):
             return ""
         if hasattr(var, 'get_template_root'):
-            template_root = 'render/%s' % var.get_template_root()
+            template_root = 'render/%s' % var.get_template_root(self.using)
         else:
             template_root = 'render/%s/%s' % (var._meta.app_label, 
                                           var._meta.object_name.lower())
         if self.using:
             template_name = '%s__%s' % (template_root, self.using)
-        else:
-            template_name = '%s.html' % template_root
+        template_name = '%s.html' % template_root
         template_list = [
             template_name,
             'render/default.html',
