@@ -1,6 +1,6 @@
 from django import template
 from django.db import models
-from django.template.context import Context
+from django.template.context import Context, RequestContext
 from django.template.loader import render_to_string
 
 register = template.Library()
@@ -9,8 +9,16 @@ class RenderNode(template.Node):
     def __init__(self, obj, using=None):
         self.obj = obj
         self.using = using
-        
     def render(self, context):
+        def __get_dicts(context):
+            result = []
+            for context_dict in context.dicts:
+                if isinstance(context_dict, RequestContext):
+                    result += __get_dicts(context_dict)
+                else:
+                    result.append(context_dict.copy())
+            return result
+
         try:
             var = template.resolve_variable(self.obj, context)
         except template.VariableDoesNotExist:
@@ -30,13 +38,11 @@ class RenderNode(template.Node):
             template_name,
             'render/default.html',
         ]
-
         # We probably want access to variables added by the context processors
         # so let's copy the existing context since we might not have access
         # to the request object.
         render_context = Context()
-        for dict in context.dicts:
-            render_context.dicts.append(dict.copy())
+        render_context.dicts = __get_dicts(context)
         render_context['render_obj'] = var
         rendered = render_to_string(template_list, render_context)
         return rendered 
