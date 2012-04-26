@@ -13,7 +13,7 @@ class RenderNode(template.Node):
         def __get_dicts(context):
             result = []
             for context_dict in context.dicts:
-                if isinstance(context_dict, RequestContext):
+                if isinstance(context_dict, RequestContext) or isinstance(context_dict, Context):
                     result += __get_dicts(context_dict)
                 else:
                     result.append(context_dict.copy())
