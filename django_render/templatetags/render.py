@@ -6,9 +6,11 @@ from django.template.loader import render_to_string
 register = template.Library()
 
 class RenderNode(template.Node):
-    def __init__(self, obj, using=None):
+    def __init__(self, obj, using=None, suffix=None):
         self.obj = obj
         self.using = using
+        self.suffix = suffix
+
     def render(self, context):
         def __get_dicts(context):
             result = []
@@ -32,12 +34,14 @@ class RenderNode(template.Node):
                                           var._meta.object_name.lower())
         if self.using:
             template_name = '%s__%s' % (template_root, self.using)
-        template_name = '%s.html' % template_root
+        elif self.suffix is not None:
+            template_name = '%s__%s.html' % (template_root, self.suffix)
+        else:
+            template_name = '%s.html' % template_root
         template_list = [
             template_name,
             'render/default.html',
-        ]
-        # We probably want access to variables added by the context processors
+        ]        # We probably want access to variables added by the context processors
         # so let's copy the existing context since we might not have access
         # to the request object.
         render_context = Context()
@@ -67,6 +71,12 @@ def render(parser, token):
 
     This will render the template ``render/[application_name]/[model_name]__long.html``
 
+    For easy managing more than one template for model you can use ``suffix`` argument.
+
+        {% render obj suffix list %}
+
+    This will render object with template `render/[application_name]/[model_name]__list.html``
+
     In the event the necessary template cannot be found, ``render/default.html``
     will be used.
     """
@@ -82,7 +92,10 @@ def render(parser, token):
     for bit in biter:
         if bit == "using":
             args["using"] = biter.next()
+        elif bit == "suffix":
+            args["suffix"] = biter.next()
         else:
             raise template.TemplateSyntaxError("%r tag got an unknown argument: %r" % (bits[0], bit))
-
+    if 'suffix' in args and 'using' in args:
+        raise template.TemplateError("Only one of the options can be used in the same time")
     return RenderNode(item, **args)
