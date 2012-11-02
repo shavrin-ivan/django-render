@@ -28,7 +28,7 @@ class RenderNode(template.Node):
         if hasattr(var, 'get_template_root'):
             template_root = 'render/%s' % var.get_template_root(self.using)
         else:
-            template_root = 'render/%s/%s' % (var._meta.app_label, 
+            template_root = 'render/%s/%s' % (var._meta.app_label,
                                           var._meta.object_name.lower())
         if self.using:
             template_name = '%s__%s' % (template_root, self.using)
@@ -44,17 +44,17 @@ class RenderNode(template.Node):
         render_context.dicts = __get_dicts(context)
         render_context['render_obj'] = var
         rendered = render_to_string(template_list, render_context)
-        return rendered 
+        return rendered
 
 @register.tag
 def render(parser, token):
     """
     Renders a model-specific template for any model instance.
-    
+
     ``render`` works like a model-aware inclusion tag and is used like so::
-    
+
         {% render obj %}
-        
+
     Assuming ``obj`` is an instance of the ``Post`` model from the ``blog``
     application, this tag will render ``render/blog/post.html`` passing
     the second-argument to the template as ``obj``. The template name is
@@ -62,17 +62,16 @@ def render(parser, token):
 
     If you'd like to use different templates in different areas of your
     site, you can do so with the ``using`` argument. For example::
-        
+
         {% render obj using long.html %}
 
     This will render the template ``render/[application_name]/[model_name]__long.html``
 
     In the event the necessary template cannot be found, ``render/default.html``
     will be used.
-       
     """
-    
-    bits = token.split_contents() 
+
+    bits = token.split_contents()
 
     if len(bits) < 2:
         raise template.TemplateSyntaxError("%r tag takes at least 2 arguments" % bits[0])
@@ -85,5 +84,5 @@ def render(parser, token):
             args["using"] = biter.next()
         else:
             raise template.TemplateSyntaxError("%r tag got an unknown argument: %r" % (bits[0], bit))
-    
+
     return RenderNode(item, **args)
